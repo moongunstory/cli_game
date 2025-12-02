@@ -52,6 +52,10 @@ class MonsterEvolutionGame(arcade.Window):
         # Pending level ups
         self.pending_level_ups = 0
 
+        # Contact damage cooldown
+        self.contact_damage_cooldown = 0.5  # seconds between contact damage ticks
+        self.contact_damage_timer = 0.0
+
         # Setup
         self.setup()
 
@@ -76,6 +80,7 @@ class MonsterEvolutionGame(arcade.Window):
         self.state = GameState.PLAYING
         self.current_menu = None
         self.pending_level_ups = 0
+        self.contact_damage_timer = 0.0
 
     def _update_player_skills(self):
         """Update player skills based on current form"""
@@ -90,6 +95,11 @@ class MonsterEvolutionGame(arcade.Window):
 
     def on_key_press(self, key, modifiers):
         """Handle key press events"""
+        # Fullscreen toggle (works in any state)
+        if key == arcade.key.F11:
+            self.set_fullscreen(not self.fullscreen)
+            return
+
         # Menu handling
         if self.state == GameState.STAT_UPGRADE:
             self.current_menu.handle_key_press(key)
@@ -184,13 +194,21 @@ class MonsterEvolutionGame(arcade.Window):
             self.current_floor.enemies
         )
 
-        for enemy in hit_list:
-            # Enemy deals damage to player
+        # Only deal contact damage if cooldown expired
+        if hit_list and self.contact_damage_timer <= 0:
+            enemy = hit_list[0]  # Take damage from first enemy in list
             self.player.take_damage(enemy.atk)
+            self.contact_damage_timer = self.contact_damage_cooldown
 
     def on_update(self, delta_time):
         """Update game logic"""
         if self.state == GameState.PLAYING:
+            # Decrement contact damage timer
+            if self.contact_damage_timer > 0:
+                self.contact_damage_timer -= delta_time
+                if self.contact_damage_timer < 0:
+                    self.contact_damage_timer = 0
+
             # Update player movement
             old_x = self.player.center_x
             old_y = self.player.center_y
@@ -228,17 +246,35 @@ class MonsterEvolutionGame(arcade.Window):
             # Center camera on player
             self._center_camera_on_player()
 
-    def _center_camera_on_player(self):
-        """Center the camera on the player"""
-        screen_center_x = self.player.center_x - (SCREEN_WIDTH / 2)
-        screen_center_y = self.player.center_y - (SCREEN_HEIGHT / 2)
+    def on_resize(self, width, height):
+        """Handle window resize events"""
+        super().on_resize(width, height)
 
-        # Clamp to map bounds
-        screen_center_x = max(0, min(screen_center_x, MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH))
-        screen_center_y = max(0, min(screen_center_y, MAP_HEIGHT * TILE_SIZE - SCREEN_HEIGHT))
+        # Recreate cameras with new window dimensions
+        if self.world_camera:
+            self.world_camera = arcade.camera.Camera2D()
+        if self.ui_camera:
+            self.ui_camera = arcade.camera.Camera2D()
+
+        # Recenter camera on player
+        if hasattr(self, 'player') and self.player:
+            self._center_camera_on_player()
+
+    def _center_camera_on_player(self):
+        """Center the camera on the player (Camera2D semantics)"""
+        # Camera2D.position is the world-space center of the camera, not bottom-left
+        half_w = self.width / 2
+        half_h = self.height / 2
+
+        map_w = MAP_WIDTH * TILE_SIZE
+        map_h = MAP_HEIGHT * TILE_SIZE
+
+        # Clamp camera center so viewport never goes outside map bounds
+        target_x = max(half_w, min(self.player.center_x, map_w - half_w))
+        target_y = max(half_h, min(self.player.center_y, map_h - half_h))
 
         if self.world_camera:
-            self.world_camera.position = (screen_center_x, screen_center_y)
+            self.world_camera.position = (target_x, target_y)
 
     def _show_stat_upgrade(self):
         """Show stat upgrade menu"""
