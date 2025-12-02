@@ -41,6 +41,8 @@ class MonsterPlayer(arcade.Sprite):
         # Combat
         self.last_attack_time = 0
         self.attack_cooldown = ATTACK_COOLDOWN
+        self.invincibility_timer = 0.0
+        self.invincibility_duration = INVINCIBILITY_DURATION
 
         # Collections
         self.traits = []
@@ -49,6 +51,9 @@ class MonsterPlayer(arcade.Sprite):
         # Movement
         self.velocity_x = 0
         self.velocity_y = 0
+
+        # Reference to game window for triggering effects
+        self.game_window = None
 
     def _create_texture(self):
         """Create a simple colored rectangle as texture"""
@@ -132,6 +137,10 @@ class MonsterPlayer(arcade.Sprite):
 
     def take_damage(self, damage):
         """Take damage after defense calculation"""
+        # Check invincibility
+        if self.invincibility_timer > 0:
+            return 0
+
         actual_damage = max(1, damage - self.defense)
 
         # Apply trait damage reduction
@@ -139,6 +148,14 @@ class MonsterPlayer(arcade.Sprite):
             actual_damage = trait.modify_incoming_damage(actual_damage)
 
         self.hp -= actual_damage
+
+        # Set invincibility window
+        self.invincibility_timer = self.invincibility_duration
+
+        # Trigger screen shake if game window reference exists
+        if self.game_window:
+            self.game_window.trigger_camera_shake()
+
         return actual_damage
 
     def heal(self, amount):
@@ -158,6 +175,13 @@ class MonsterPlayer(arcade.Sprite):
 
     def update_traits(self, delta_time):
         """Update trait effects (e.g., regen)"""
+        # Update invincibility timer
+        if self.invincibility_timer > 0:
+            self.invincibility_timer -= delta_time
+            if self.invincibility_timer < 0:
+                self.invincibility_timer = 0
+
+        # Update traits
         for trait in self.traits:
             trait.update(self, delta_time)
 
@@ -168,6 +192,12 @@ class MonsterPlayer(arcade.Sprite):
     def draw(self):
         """Draw the player sprite"""
         if self.texture:
+            # Blink during invincibility
+            if self.invincibility_timer > 0:
+                # Blink effect: show/hide every 0.1 seconds
+                if int(self.invincibility_timer * 10) % 2 == 0:
+                    return  # Skip drawing to create blink effect
+
             arcade.draw_texture_rect(
                 self.texture,
                 arcade.XYWH(self.center_x, self.center_y, self.width, self.height),

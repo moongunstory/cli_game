@@ -17,6 +17,36 @@ from .systems.skills import get_skill_by_id
 from .ui import HUD, TraitSelectionMenu, EvolutionSelectionMenu, GameOverMenu, StatUpgradeMenu
 
 
+class AttackEffect:
+    """Visual effect for player attacks"""
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.lifetime = 0.0
+        self.max_lifetime = ATTACK_EFFECT_DURATION
+        self.size = ATTACK_EFFECT_SIZE
+        self.color = COLOR_ATTACK_EFFECT
+
+    def update(self, delta_time):
+        """Update effect lifetime"""
+        self.lifetime += delta_time
+
+    def is_expired(self):
+        """Check if effect should be removed"""
+        return self.lifetime >= self.max_lifetime
+
+    def draw(self):
+        """Draw the attack effect"""
+        # Fade out over time
+        alpha = int(255 * (1 - self.lifetime / self.max_lifetime))
+        color = (*self.color[:3], alpha)
+
+        # Draw expanding circle
+        current_size = self.size * (1 + self.lifetime / self.max_lifetime)
+        arcade.draw_circle_filled(self.x, self.y, current_size, color)
+
+
 class GameState:
     """Game state enum"""
     PLAYING = "playing"
@@ -41,6 +71,9 @@ class MonsterEvolutionGame(arcade.Window):
         self.current_floor = None
         self.floor_number = 1
 
+        # Visual effects
+        self.attack_effects = []
+
         # UI
         self.hud = HUD()
         self.current_menu = None
@@ -53,8 +86,15 @@ class MonsterEvolutionGame(arcade.Window):
         self.pending_level_ups = 0
 
         # Contact damage cooldown
-        self.contact_damage_cooldown = 0.5  # seconds between contact damage ticks
+        self.contact_damage_cooldown = CONTACT_DAMAGE_COOLDOWN
         self.contact_damage_timer = 0.0
+
+        # Camera shake
+        self.camera_shake_timer = 0.0
+        self.camera_shake_duration = CAMERA_SHAKE_DURATION
+        self.camera_shake_magnitude = CAMERA_SHAKE_MAGNITUDE
+        self.base_camera_x = 0
+        self.base_camera_y = 0
 
         # Setup
         self.setup()
@@ -72,6 +112,7 @@ class MonsterEvolutionGame(arcade.Window):
         # Create player
         spawn_x, spawn_y = self.current_floor.get_player_spawn_position()
         self.player = MonsterPlayer(spawn_x, spawn_y)
+        self.player.game_window = self  # Set reference for screen shake
 
         # Give player initial skills based on form
         self._update_player_skills()
@@ -81,6 +122,7 @@ class MonsterEvolutionGame(arcade.Window):
         self.current_menu = None
         self.pending_level_ups = 0
         self.contact_damage_timer = 0.0
+        self.camera_shake_timer = 0.0
 
     def _update_player_skills(self):
         """Update player skills based on current form"""
@@ -167,6 +209,10 @@ class MonsterEvolutionGame(arcade.Window):
         if not self.player.can_attack():
             return
 
+        # Create attack effect at player position
+        effect = AttackEffect(self.player.center_x, self.player.center_y)
+        self.attack_effects.append(effect)
+
         # Find enemies in range
         for enemy in self.current_floor.enemies:
             distance = (
@@ -176,6 +222,9 @@ class MonsterEvolutionGame(arcade.Window):
 
             if distance <= ATTACK_RANGE:
                 damage = self.player.perform_attack(enemy)
+                # Apply damage to enemy
+                enemy.take_damage(damage)
+
                 if not enemy.is_alive():
                     # Enemy died
                     xp_gained = enemy.xp_value
@@ -186,6 +235,10 @@ class MonsterEvolutionGame(arcade.Window):
 
                 # Only attack one enemy per press
                 break
+
+    def trigger_camera_shake(self):
+        """Trigger camera shake effect"""
+        self.camera_shake_timer = self.camera_shake_duration
 
     def _check_player_enemy_collision(self):
         """Check if player is touching enemies (contact damage)"""
@@ -209,6 +262,12 @@ class MonsterEvolutionGame(arcade.Window):
                 if self.contact_damage_timer < 0:
                     self.contact_damage_timer = 0
 
+            # Decrement camera shake timer
+            if self.camera_shake_timer > 0:
+                self.camera_shake_timer -= delta_time
+                if self.camera_shake_timer < 0:
+                    self.camera_shake_timer = 0
+
             # Update player movement
             old_x = self.player.center_x
             old_y = self.player.center_y
@@ -225,6 +284,12 @@ class MonsterEvolutionGame(arcade.Window):
 
             # Update floor (enemy AI)
             self.current_floor.update(self.player, delta_time)
+
+            # Update attack effects
+            for effect in self.attack_effects:
+                effect.update(delta_time)
+            # Remove expired effects
+            self.attack_effects = [e for e in self.attack_effects if not e.is_expired()]
 
             # Check player-enemy collision
             self._check_player_enemy_collision()
@@ -256,12 +321,18 @@ class MonsterEvolutionGame(arcade.Window):
         if self.ui_camera:
             self.ui_camera = arcade.camera.Camera2D()
 
+        # Update HUD to use new screen dimensions
+        if hasattr(self, 'hud') and self.hud:
+            self.hud.hud_y_start = height - 30
+
         # Recenter camera on player
         if hasattr(self, 'player') and self.player:
             self._center_camera_on_player()
 
     def _center_camera_on_player(self):
         """Center the camera on the player (Camera2D semantics)"""
+        import random
+
         # Camera2D.position is the world-space center of the camera, not bottom-left
         half_w = self.width / 2
         half_h = self.height / 2
@@ -272,6 +343,17 @@ class MonsterEvolutionGame(arcade.Window):
         # Clamp camera center so viewport never goes outside map bounds
         target_x = max(half_w, min(self.player.center_x, map_w - half_w))
         target_y = max(half_h, min(self.player.center_y, map_h - half_h))
+
+        # Store base position
+        self.base_camera_x = target_x
+        self.base_camera_y = target_y
+
+        # Apply camera shake if active
+        if self.camera_shake_timer > 0:
+            shake_x = random.uniform(-self.camera_shake_magnitude, self.camera_shake_magnitude)
+            shake_y = random.uniform(-self.camera_shake_magnitude, self.camera_shake_magnitude)
+            target_x += shake_x
+            target_y += shake_y
 
         if self.world_camera:
             self.world_camera.position = (target_x, target_y)
@@ -367,6 +449,42 @@ class MonsterEvolutionGame(arcade.Window):
         """Restart the game"""
         self.setup()
 
+    def _draw_enemy_hp_bars(self):
+        """Draw HP bars above enemies"""
+        bar_width = 30
+        bar_height = 4
+        bar_offset_y = 8  # Pixels above enemy
+
+        for enemy in self.current_floor.enemies:
+            # Calculate HP ratio
+            hp_ratio = max(0, min(1, enemy.hp / enemy.max_hp))
+
+            # Bar position
+            bar_x = enemy.center_x
+            bar_y = enemy.top + bar_offset_y
+
+            # Background (empty HP)
+            arcade.draw_rect_filled(
+                arcade.XYWH(bar_x, bar_y, bar_width, bar_height),
+                COLOR_HP_EMPTY
+            )
+
+            # Foreground (current HP)
+            if hp_ratio > 0:
+                fill_width = bar_width * hp_ratio
+                fill_x = bar_x - (bar_width - fill_width) / 2
+                arcade.draw_rect_filled(
+                    arcade.XYWH(fill_x, bar_y, fill_width, bar_height),
+                    COLOR_HP_FILL
+                )
+
+            # Border
+            arcade.draw_rect_outline(
+                arcade.XYWH(bar_x, bar_y, bar_width, bar_height),
+                COLOR_UI_BORDER,
+                1
+            )
+
     def on_draw(self):
         """Draw the game"""
         self.clear()
@@ -380,13 +498,20 @@ class MonsterEvolutionGame(arcade.Window):
         self.current_floor.enemies.draw()
         self.player.draw()
 
+        # Draw attack effects
+        for effect in self.attack_effects:
+            effect.draw()
+
+        # Draw enemy HP bars
+        self._draw_enemy_hp_bars()
+
         # --- UI 카메라: HUD / 메뉴 ---
         if self.ui_camera:
             self.ui_camera.use()
 
         # Draw HUD
         if self.state in (GameState.PLAYING, GameState.STAT_UPGRADE):
-            self.hud.draw(self.player)
+            self.hud.draw(self.player, self.width, self.height)
 
         # Draw menus
         if self.current_menu:

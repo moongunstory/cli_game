@@ -25,6 +25,9 @@ COLOR_HP_BAR = (220, 50, 50)
 COLOR_XP_BAR = (100, 200, 100)
 COLOR_TEXT = (255, 255, 255)
 COLOR_TEXT_DARK = (150, 150, 150)
+COLOR_HP_FILL = (50, 200, 50)  # Green HP bar fill
+COLOR_HP_EMPTY = (60, 60, 60)  # Gray HP bar background
+COLOR_ATTACK_EFFECT = (255, 220, 100, 200)  # Yellow-ish attack flash
 
 # Player settings
 PLAYER_SPEED = 3
@@ -37,6 +40,16 @@ BASE_CRIT_CHANCE = 0.1
 BASE_CRIT_MULTIPLIER = 1.5
 ATTACK_RANGE = TILE_SIZE * 1.5  # About 48 pixels - allows hitting before full overlap
 ATTACK_COOLDOWN = 0.35  # Faster attacks for better combat feel
+INVINCIBILITY_DURATION = 0.6  # Invincibility window after taking damage
+CONTACT_DAMAGE_COOLDOWN = 0.5  # Cooldown between contact damage ticks
+
+# Camera shake settings
+CAMERA_SHAKE_DURATION = 0.15  # How long the shake lasts
+CAMERA_SHAKE_MAGNITUDE = 6.0  # How intense the shake is
+
+# Attack effect settings
+ATTACK_EFFECT_DURATION = 0.15  # How long attack effect shows
+ATTACK_EFFECT_SIZE = 40  # Size of attack effect circle
 
 # Progression settings
 XP_PER_LEVEL = 100
