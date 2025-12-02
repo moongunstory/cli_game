@@ -7,8 +7,8 @@ Alternative way to run the game: python run_game.py
 import sys
 import os
 
-# Add src directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+# Add current directory to Python path
+sys.path.insert(0, os.path.dirname(__file__))
 
 # Import and run the main game
 from cli_game.main import main
