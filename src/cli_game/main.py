@@ -45,8 +45,9 @@ class MonsterEvolutionGame(arcade.Window):
         self.hud = HUD()
         self.current_menu = None
 
-        # Camera
-        self.camera = None
+        # Cameras
+        self.world_camera = None   # 월드(맵, 플레이어, 적)용
+        self.ui_camera = None      # HUD/메뉴용
 
         # Pending level ups
         self.pending_level_ups = 0
@@ -56,8 +57,9 @@ class MonsterEvolutionGame(arcade.Window):
 
     def setup(self):
         """Initialize/reset the game"""
-        # Create camera
-        self.camera = arcade.camera.Camera2D()
+        # Create cameras
+        self.world_camera = arcade.camera.Camera2D()
+        self.ui_camera = arcade.camera.Camera2D()
 
         # Reset floor
         self.floor_number = 1
@@ -235,7 +237,8 @@ class MonsterEvolutionGame(arcade.Window):
         screen_center_x = max(0, min(screen_center_x, MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH))
         screen_center_y = max(0, min(screen_center_y, MAP_HEIGHT * TILE_SIZE - SCREEN_HEIGHT))
 
-        self.camera.position = (screen_center_x, screen_center_y)
+        if self.world_camera:
+            self.world_camera.position = (screen_center_x, screen_center_y)
 
     def _show_stat_upgrade(self):
         """Show stat upgrade menu"""
@@ -332,23 +335,21 @@ class MonsterEvolutionGame(arcade.Window):
         """Draw the game"""
         self.clear()
 
-        # Use camera for game world
-        self.camera.use()
+        # --- 월드 카메라: 맵 / 적 / 플레이어 ---
+        if self.world_camera:
+            self.world_camera.use()
 
-        # Draw walls
+        # Draw world
         self.current_floor.walls.draw()
-
-        # Draw enemies
         self.current_floor.enemies.draw()
-
-        # Draw player
         self.player.draw()
 
-        # Use default camera for UI
-        arcade.set_viewport(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT)
+        # --- UI 카메라: HUD / 메뉴 ---
+        if self.ui_camera:
+            self.ui_camera.use()
 
         # Draw HUD
-        if self.state == GameState.PLAYING or self.state == GameState.STAT_UPGRADE:
+        if self.state in (GameState.PLAYING, GameState.STAT_UPGRADE):
             self.hud.draw(self.player)
 
         # Draw menus

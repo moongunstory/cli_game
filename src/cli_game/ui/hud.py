@@ -17,21 +17,25 @@ class HUD:
     def draw(self, player):
         """Draw the HUD"""
         # Background panel
-        arcade.draw_rectangle_filled(
-            SCREEN_WIDTH - 150,
-            SCREEN_HEIGHT - 100,
-            280,
-            180,
-            COLOR_UI_BG
+        arcade.draw_rect_filled(
+            arcade.XYWH(
+                SCREEN_WIDTH - 150,
+                SCREEN_HEIGHT - 100,
+                280,
+                180,
+            ),
+            COLOR_UI_BG,
         )
 
-        arcade.draw_rectangle_outline(
-            SCREEN_WIDTH - 150,
-            SCREEN_HEIGHT - 100,
-            280,
-            180,
+        arcade.draw_rect_outline(
+            arcade.XYWH(
+                SCREEN_WIDTH - 150,
+                SCREEN_HEIGHT - 100,
+                280,
+                180,
+            ),
             COLOR_UI_BORDER,
-            2
+            2,
         )
 
         y = SCREEN_HEIGHT - 30
@@ -139,21 +143,39 @@ class HUD:
     def _draw_bar(self, x, y, width, height, current, maximum, color, label):
         """Draw a stat bar with label"""
         # Background
-        arcade.draw_rectangle_filled(x + width / 2, y + height / 2, width, height, (50, 50, 50))
+        arcade.draw_rect_filled(
+            arcade.XYWH(
+                x + width / 2,
+                y + height / 2,
+                width,
+                height,
+            ),
+            (50, 50, 50),
+        )
 
         # Fill
         if maximum > 0:
             fill_width = (current / maximum) * width
-            arcade.draw_rectangle_filled(
-                x + fill_width / 2,
-                y + height / 2,
-                fill_width,
-                height,
-                color
+            arcade.draw_rect_filled(
+                arcade.XYWH(
+                    x + fill_width / 2,
+                    y + height / 2,
+                    fill_width,
+                    height,
+                ),
+                color,
             )
 
         # Border
-        arcade.draw_rectangle_outline(x + width / 2, y + height / 2, width, height, COLOR_UI_BORDER)
+        arcade.draw_rect_outline(
+            arcade.XYWH(
+                x + width / 2,
+                y + height / 2,
+                width,
+                height,
+            ),
+            COLOR_UI_BORDER,
+        )
 
         # Label
         arcade.draw_text(label, x + 5, y + 4, COLOR_TEXT, 10, bold=True)
@@ -171,19 +193,23 @@ class HUD:
             x = x_start + i * (skill_width + 10)
 
             # Background
-            arcade.draw_rectangle_filled(
-                x + skill_width / 2,
-                y_pos + skill_height / 2,
-                skill_width,
-                skill_height,
-                COLOR_UI_BG
+            arcade.draw_rect_filled(
+                arcade.XYWH(
+                    x + skill_width / 2,
+                    y_pos + skill_height / 2,
+                    skill_width,
+                    skill_height,
+                ),
+                COLOR_UI_BG,
             )
-            arcade.draw_rectangle_outline(
-                x + skill_width / 2,
-                y_pos + skill_height / 2,
-                skill_width,
-                skill_height,
-                COLOR_UI_BORDER
+            arcade.draw_rect_outline(
+                arcade.XYWH(
+                    x + skill_width / 2,
+                    y_pos + skill_height / 2,
+                    skill_width,
+                    skill_height,
+                ),
+                COLOR_UI_BORDER,
             )
 
             # Key binding

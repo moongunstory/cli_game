@@ -168,7 +168,8 @@ class MonsterPlayer(arcade.Sprite):
     def draw(self):
         """Draw the player sprite"""
         if self.texture:
-            self.texture.draw_sized(
-                self.center_x, self.center_y,
-                self.width, self.height
+            arcade.draw_texture_rect(
+                self.texture,
+                arcade.XYWH(self.center_x, self.center_y, self.width, self.height),
             )
+
