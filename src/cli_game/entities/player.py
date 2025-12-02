@@ -164,3 +164,11 @@ class MonsterPlayer(arcade.Sprite):
     def update(self):
         """Called each frame"""
         pass
+
+    def draw(self):
+        """Draw the player sprite"""
+        if self.texture:
+            self.texture.draw_sized(
+                self.center_x, self.center_y,
+                self.width, self.height
+            )
