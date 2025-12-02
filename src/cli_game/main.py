@@ -57,7 +57,7 @@ class MonsterEvolutionGame(arcade.Window):
     def setup(self):
         """Initialize/reset the game"""
         # Create camera
-        self.camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.camera = arcade.camera.Camera2D()
 
         # Reset floor
         self.floor_number = 1
@@ -228,14 +228,14 @@ class MonsterEvolutionGame(arcade.Window):
 
     def _center_camera_on_player(self):
         """Center the camera on the player"""
-        screen_center_x = self.player.center_x - (self.camera.viewport_width / 2)
-        screen_center_y = self.player.center_y - (self.camera.viewport_height / 2)
+        screen_center_x = self.player.center_x - (SCREEN_WIDTH / 2)
+        screen_center_y = self.player.center_y - (SCREEN_HEIGHT / 2)
 
         # Clamp to map bounds
-        screen_center_x = max(0, min(screen_center_x, MAP_WIDTH * TILE_SIZE - self.camera.viewport_width))
-        screen_center_y = max(0, min(screen_center_y, MAP_HEIGHT * TILE_SIZE - self.camera.viewport_height))
+        screen_center_x = max(0, min(screen_center_x, MAP_WIDTH * TILE_SIZE - SCREEN_WIDTH))
+        screen_center_y = max(0, min(screen_center_y, MAP_HEIGHT * TILE_SIZE - SCREEN_HEIGHT))
 
-        self.camera.move_to((screen_center_x, screen_center_y))
+        self.camera.position = (screen_center_x, screen_center_y)
 
     def _show_stat_upgrade(self):
         """Show stat upgrade menu"""
