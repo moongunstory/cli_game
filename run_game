@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Monster Evolution RPG Launcher Script
+
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Change to the repository root
+cd "$SCRIPT_DIR"
+
+# Try to activate virtual environment if it exists (optional)
+if [ -d ".venv" ]; then
+    source .venv/bin/activate 2>/dev/null || true
+elif [ -d "venv" ]; then
+    source venv/bin/activate 2>/dev/null || true
+fi
+
+# Run the game using Python module syntax
+# You can change 'python' to 'python3' if needed
+python -m cli_game.main
+
+# Exit with the same code as the Python script
+exit $?
