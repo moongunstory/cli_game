@@ -10,40 +10,60 @@ class HUD:
     """Game HUD showing player stats and info"""
 
     def __init__(self):
-        self.padding = 10
+        self.padding = 20
         self.bar_height = 20
         self.bar_width = 200
+        self.hud_x = 20  # Left side positioning
+        self.screen_width = SCREEN_WIDTH
+        self.screen_height = SCREEN_HEIGHT
 
-    def draw(self, player):
+    def draw(self, player, screen_width=None, screen_height=None):
         """Draw the HUD"""
-        # Background panel
+        # Use provided dimensions or defaults
+        if screen_width is None:
+            screen_width = self.screen_width
+        if screen_height is None:
+            screen_height = self.screen_height
+
+        # Update stored dimensions
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+
+        # Background panel (top-left)
+        panel_width = 240
+        panel_height = 180
+        panel_x = self.padding
+        panel_y = screen_height - panel_height - self.padding
+
         arcade.draw_rect_filled(
             arcade.XYWH(
-                SCREEN_WIDTH - 150,
-                SCREEN_HEIGHT - 100,
-                280,
-                180,
+                panel_x + panel_width / 2,
+                panel_y + panel_height / 2,
+                panel_width,
+                panel_height,
             ),
             COLOR_UI_BG,
         )
 
         arcade.draw_rect_outline(
             arcade.XYWH(
-                SCREEN_WIDTH - 150,
-                SCREEN_HEIGHT - 100,
-                280,
-                180,
+                panel_x + panel_width / 2,
+                panel_y + panel_height / 2,
+                panel_width,
+                panel_height,
             ),
             COLOR_UI_BORDER,
             2,
         )
 
-        y = SCREEN_HEIGHT - 30
+        # Content positioning
+        content_x = panel_x + 10
+        y = screen_height - 40
 
         # Player form
         arcade.draw_text(
             f"Form: {player.current_form.replace('_', ' ').title()}",
-            SCREEN_WIDTH - 280,
+            content_x,
             y,
             COLOR_TEXT,
             12,
@@ -54,7 +74,7 @@ class HUD:
         # Level
         arcade.draw_text(
             f"Level: {player.level}",
-            SCREEN_WIDTH - 280,
+            content_x,
             y,
             COLOR_TEXT,
             12
@@ -63,7 +83,7 @@ class HUD:
 
         # HP Bar
         self._draw_bar(
-            SCREEN_WIDTH - 280,
+            content_x,
             y,
             self.bar_width,
             self.bar_height,
@@ -76,7 +96,7 @@ class HUD:
 
         # XP Bar
         self._draw_bar(
-            SCREEN_WIDTH - 280,
+            content_x,
             y,
             self.bar_width,
             self.bar_height,
@@ -90,7 +110,7 @@ class HUD:
         # Stats
         arcade.draw_text(
             f"ATK: {int(player.atk)}  DEF: {int(player.defense)}",
-            SCREEN_WIDTH - 280,
+            content_x,
             y,
             COLOR_TEXT,
             11
@@ -99,18 +119,18 @@ class HUD:
 
         arcade.draw_text(
             f"CRIT: {int(player.crit_chance * 100)}%",
-            SCREEN_WIDTH - 280,
+            content_x,
             y,
             COLOR_TEXT,
             11
         )
 
-        # Traits
+        # Traits (below the main HUD panel)
         if player.traits:
-            y = SCREEN_HEIGHT - 210
+            y = panel_y - 30
             arcade.draw_text(
                 "Traits:",
-                SCREEN_WIDTH - 280,
+                content_x,
                 y,
                 COLOR_TEXT,
                 11,
@@ -120,7 +140,7 @@ class HUD:
             for trait in player.traits[:3]:  # Show first 3
                 arcade.draw_text(
                     f"• {trait.name}",
-                    SCREEN_WIDTH - 280,
+                    content_x,
                     y,
                     COLOR_TEXT_DARK,
                     10
