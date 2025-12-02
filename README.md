@@ -58,6 +58,7 @@ python run_game.py
 
 ### Option 3: Direct module execution
 ```bash
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/src"
 python -m cli_game.main
 ```
 
