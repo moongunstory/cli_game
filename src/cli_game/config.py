@@ -35,8 +35,8 @@ PLAYER_START_DEF = 5
 # Combat settings
 BASE_CRIT_CHANCE = 0.1
 BASE_CRIT_MULTIPLIER = 1.5
-ATTACK_RANGE = 50
-ATTACK_COOLDOWN = 0.5
+ATTACK_RANGE = TILE_SIZE * 1.5  # About 48 pixels - allows hitting before full overlap
+ATTACK_COOLDOWN = 0.35  # Faster attacks for better combat feel
 
 # Progression settings
 XP_PER_LEVEL = 100
