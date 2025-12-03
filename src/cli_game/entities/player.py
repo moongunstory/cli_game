@@ -20,7 +20,6 @@ class MonsterPlayer(arcade.Sprite):
         self.width = TILE_SIZE
         self.height = TILE_SIZE
         self.color = COLOR_PLAYER
-        self._create_texture()
 
         # Core stats
         self.max_hp = PLAYER_START_HP
@@ -55,16 +54,9 @@ class MonsterPlayer(arcade.Sprite):
         # Reference to game window for triggering effects
         self.game_window = None
 
-    def _create_texture(self):
-        """Create a simple colored rectangle as texture"""
-        self.texture = arcade.make_soft_square_texture(
-            int(self.width), self.color, outer_alpha=255
-        )
-
     def update_color(self, color):
         """Update player color (used when evolving)"""
         self.color = color
-        self._create_texture()
 
     @property
     def atk(self):
@@ -191,15 +183,13 @@ class MonsterPlayer(arcade.Sprite):
 
     def draw(self):
         """Draw the player sprite"""
-        if self.texture:
-            # Blink during invincibility
-            if self.invincibility_timer > 0:
-                # Blink effect: show/hide every 0.1 seconds
-                if int(self.invincibility_timer * 10) % 2 == 0:
-                    return  # Skip drawing to create blink effect
+        # Blink during invincibility
+        if self.invincibility_timer > 0:
+            # Blink effect: show/hide every 0.1 seconds
+            if int(self.invincibility_timer * 10) % 2 == 0:
+                return  # Skip drawing to create blink effect
 
-            arcade.draw_texture_rect(
-                self.texture,
-                arcade.XYWH(self.center_x, self.center_y, self.width, self.height),
-            )
+        arcade.draw_circle_filled(
+            self.center_x, self.center_y, self.width / 2, self.color
+        )
 
